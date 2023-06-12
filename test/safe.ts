@@ -7,17 +7,17 @@ import setupHashi from "./utils/setupHashi";
 import setupSafe from "./utils/setupSafe";
 
 const DOMAIN_ID = network.config.chainId
-const ID_ZERO = 0
-const ID_ONE = 1
-const BYTES32_DOMAIN_ID = "0x0000000000000000000000000000000000000000000000000000000000007A69"
+const ID_ZERO = 0 // First messageId
+const ID_ONE = 1 // Second messageId
+const BYTES32_DOMAIN_ID = "0x0000000000000000000000000000000000000000000000000000000000007A69"   // source chain bytes32 domain ID defined in MOCKAMB.sol
 
 
 // const setupProtocolKit = () =>{
 //     // ethers v6 switch from ethersproviders.Web3Provider to ethers.BrowserProvider
 //     // https://docs.ethers.org/v6/migrating/#migrate-providers
- 
-              
 // }
+
+
 describe("Safe",()=>{
     it("setup",async()=>{
         const {
@@ -46,7 +46,7 @@ describe("Safe",()=>{
     const provider = await ethers.getDefaultProvider()
 
 
-    // const chainId = await ethAdapter.getChainId()
+    // setup contract network config when Safe protocol contracts are not deployed on current network
     const contractNetworks: ContractNetworksConfig = {
     [DOMAIN_ID]: {
         safeMasterCopyAddress: safeMasterCopy.address,
@@ -59,18 +59,14 @@ describe("Safe",()=>{
     }
     }
 
-    //const safeSdk = await Safe.create({ ethAdapter, safeAddress, contractNetworks })
-
-    // const provider = new ethers.providers.Web3Provider(network.provider)
-    
+    // ethAdapter with signer 1 and signer 2
     const ethAdapterOwner1 = new EthersAdapter({ethers,signerOrProvider: wallet1});
     const ethAdapterOwner2 = new EthersAdapter({ethers,signerOrProvider: wallet2});
-    console.log(typeof(wallet1))
-    console.log(wallet1.address)
-    console.log(wallet2.address)
+    // safeFactory with signer 1 and signer 2
     const safeFactory1 = await SafeFactory.create({ ethAdapter: ethAdapterOwner1,contractNetworks })
     const safeFactory2 = await SafeFactory.create({ ethAdapter: ethAdapterOwner2,contractNetworks })
 
+    // source chain = Safe with owner1
     const source_safeAccountConfig: SafeAccountConfig = {
         owners: [
             wallet1.address,
@@ -79,6 +75,7 @@ describe("Safe",()=>{
         threshold: 1,
         }
 
+    // destination chain = Safe with owner2
     const destination_safeAccountConfig: SafeAccountConfig = {
         owners: [
             wallet2.address,
@@ -89,9 +86,10 @@ describe("Safe",()=>{
 
 
     // For predicted address
+    // ============= Testing ============
     const safeDeploymentConfig :SafeDeploymentConfig = {
-        saltNonce: '1',
-        safeVersion: "1.3.0"
+        saltNonce: '0x1', // Has to be number or hex
+        safeVersion: "1.3.0"  // use v1.3.0 for testing (latest v1.4.0 still not supported by Protocol Kit)
     }
     const predictedSafe: PredictedSafeProps = {
         safeAccountConfig: destination_safeAccountConfig,
@@ -107,10 +105,12 @@ describe("Safe",()=>{
     const SafeAddress1 = await safeSdk1.getAddress()
     console.log("Deployed Safe1: ",SafeAddress1)
 
-    const safeSdk2: Safe = await safeFactory2.deploySafe({safeAccountConfig:destination_safeAccountConfig })
-   
+    const safeSdk2: Safe = await safeFactory2.deploySafe({safeAccountConfig:destination_safeAccountConfig,saltNonce: '0x1' })
+
     const SafeAddress2 = await safeSdk2.getAddress()
     console.log("Deployed Safe2: ",SafeAddress2)
+
+    expect(predictedAddress).to.equal(SafeAddress2)
 
     const HashiModule = await ethers.getContractFactory("HashiModule")
     const network = await provider.getNetwork()
@@ -144,7 +144,7 @@ describe("Safe",()=>{
       toChainId: DOMAIN_ID,
       data: tx,
     }
-    const pingCount = await pingPong.connect(wallet1).count()
+    const pingCount = await pingPong.count()
 
     // dispatch message
     await yaho.dispatchMessagesToAdapters([message], [ambMessageRelay.address], [ambAdapter.address])
