@@ -25,6 +25,6 @@ contract AMBMessageRelay is IMessageRelay {
             emit MessageRelayed(address(this), messageIds[i]);
         }
         bytes memory data = abi.encodeCall(AMBAdapter.storeHashes, (messageIds, hashes));
-        receipt = amb.requireToPassMessage(ambAdapter, data, 0);
+        receipt = amb.requireToPassMessage(ambAdapter, data, 500000);
     }
 }
