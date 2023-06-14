@@ -2,7 +2,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { task, types } from "hardhat/config"
 import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types"
 import Safe, { SafeFactory, SafeAccountConfig, EthersAdapter, ContractNetworksConfig, SafeDeploymentConfig } from '@safe-global/protocol-kit'
-import { PredictedSafeProps } from '@safe-global/protocol-kit'
+import SafeApiKit from '@safe-global/api-kit'
+import contractAddress from '../utils/contract.json'
+
+
 task("deploy:Safe")
     .addParam("numowners","number of owners of Safe")
     .addParam("address","owners address")
@@ -49,7 +52,7 @@ task("deploy:HashiModule")
         const _owner = taskArguments.owner
         const _avatar = taskArguments.safe
         const _target = taskArguments.target
-        const _yaru = "0xba73B783Cadec4f250619C2e99A5b1D07FFce760"
+        const _yaru = contractAddress.Yaru
         const _controller = taskArguments.controller
         const _chainId = taskArguments.sourcechainid
 
@@ -61,17 +64,59 @@ task("deploy:HashiModule")
         console.log(_chainId)
 
         const hashiModule = await HashiModule.deploy(_owner,_avatar,_target,_yaru,_controller,_chainId)
-        
+        console.log("setting up")
         const ethAdapterOwner1 = new EthersAdapter({ethers,signerOrProvider: signer});
         const safeSDK = await Safe.create({ethAdapter: ethAdapterOwner1,safeAddress:_avatar})
         const safeTransaction = await safeSDK.createEnableModuleTx(hashiModule.address)
         const txHash = await safeSDK.getTransactionHash(safeTransaction)
+        const senderSignature = await safeSDK.signTransactionHash(txHash)
+        const TxServiceUrl:string = getSafeTxService(network.config.chainId)
+        console.log("tx service url: ",TxServiceUrl)
+        const safeService = new SafeApiKit({txServiceUrl:TxServiceUrl,ethAdapter:ethAdapterOwner1})
+        console.log("Propose transaction...")
+        await safeService.proposeTransaction({
+            safeAddress:_avatar,
+            safeTransactionData: safeTransaction.data,
+            safeTxHash: txHash,
+            senderAddress: signer.address,
+            senderSignature: senderSignature.data,
+        })
+        
+        console.log("Please login to Safe UI and sign transaction")
         // const approveTxResponse = await safeSDK.approveTransactionHash(txHash)
         // console.log(await approveTxResponse.transactionResponse?.wait())
-        const txResponse = await safeSDK.executeTransaction(safeTransaction)
+        // const txResponse = await safeSDK.executeTransaction(safeTransaction)
         
-        console.log("Tx response: ",await txResponse.transactionResponse?.wait())
+        // console.log("Tx response: ",await txResponse.transactionResponse?.wait())
         
  
      
     })
+
+const chainIds = {
+    1 : "mainnet",
+    5 : "goerli",
+    100: "gnosis"
+
+    }
+      
+function getSafeTxService(chainid: keyof typeof chainIds): string{
+    let apiURL: string
+    switch(chainid){
+        case 1: 
+            apiURL = "https://safe-transaction-mainnet.safe.global/"
+            break
+        case 5: 
+            apiURL = "https://safe-transaction-goerli.safe.global/"
+            break        
+        case 100: 
+            apiURL = "https://safe-transaction-gnosis-chain.safe.global/"
+            break
+        default:
+            apiURL = "NotAvailable"
+            break
+    }
+
+    return apiURL
+   
+}
