@@ -5,7 +5,7 @@ import 'dotenv/config';
 import contractAddress from '../utils/contract.json'
 import { BigNumber, Bytes } from "ethers";
 
-const main = async (messageId: Bytes[],messageSender: string[], ) =>{
+const main = async (/*messageId: Bytes[],messageSender: string[]*/ ) =>{
 
     const RPC = network.config.url
     const ChainID = network.config.chainId
