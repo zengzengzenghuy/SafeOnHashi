@@ -56,12 +56,12 @@ task("deploy:HashiModule")
         const _controller = taskArguments.controller
         const _chainId = taskArguments.sourcechainid
 
-        console.log(_owner)
-        console.log(_avatar)
-        console.log(_target)
-        console.log(_yaru)
-        console.log(_controller)
-        console.log(_chainId)
+        console.log("Owner: ",_owner)
+        console.log("Safe: ",_avatar)
+        console.log("Target: ",_target)
+        console.log("Yaru: ",_yaru)
+        console.log("Controller: ",_controller)
+        console.log("ChainID: ",_chainId)
 
         const hashiModule = await HashiModule.deploy(_owner,_avatar,_target,_yaru,_controller,_chainId)
         console.log("setting up")
