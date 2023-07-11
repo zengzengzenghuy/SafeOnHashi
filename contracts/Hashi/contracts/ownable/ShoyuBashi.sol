@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import { Hashi, IOracleAdapter, ShuSo, OwnableUpgradeable } from "./ShuSo.sol";
-import { Domain } from "../interfaces/IDomain.sol";
+import {Hashi, IOracleAdapter, ShuSo, OwnableUpgradeable} from "./ShuSo.sol";
+import {Domain} from "../interfaces/IDomain.sol";
 
 contract ShoyuBashi is ShuSo {
     constructor(address _owner, address _hashi) ShuSo(_owner, _hashi) {}
@@ -28,7 +28,10 @@ contract ShoyuBashi is ShuSo {
     /// @param _adapters Array of oracleAdapter addresses.
     /// @notice Reverts if _adapters are out of order or contain duplicates.
     /// @notice Only callable by the owner of this contract.
-    function enableOracleAdapters(uint256 domain, IOracleAdapter[] memory _adapters) public {
+    function enableOracleAdapters(
+        uint256 domain,
+        IOracleAdapter[] memory _adapters
+    ) public {
         _enableOracleAdapters(domain, _adapters);
     }
 
@@ -37,7 +40,10 @@ contract ShoyuBashi is ShuSo {
     /// @param _adapters Array of oracleAdapter addresses.
     /// @notice Reverts if _adapters are out of order or contain duplicates.
     /// @notice Only callable by the owner of this contract.
-    function disableOracleAdapters(uint256 domain, IOracleAdapter[] memory _adapters) public {
+    function disableOracleAdapters(
+        uint256 domain,
+        IOracleAdapter[] memory _adapters
+    ) public {
         _disableOracleAdapters(domain, _adapters);
     }
 
@@ -48,8 +54,24 @@ contract ShoyuBashi is ShuSo {
     /// @notice Reverts if oracles disagree.
     /// @notice Reverts if oracles have not yet reported the hash for the given ID.
     /// @notice Reverts if no oracles are set for the given domain.
-    function getUnanimousHash(uint256 domain, uint256 id) public view returns (bytes32 hash) {
+    function getUnanimousHash(
+        uint256 domain,
+        uint256 id
+    ) public view returns (bytes32 hash) {
         hash = _getUnanimousHash(domain, id);
+    }
+
+    /// @dev Returns the hash agreed upon by a threshold of the enabled oraclesAdapters.
+    /// @param domain Uint256 identifier for the domain to query.
+    /// @param id Uint256 identifier to query.
+    /// @return hash Bytes32 hash agreed upon by a threshold of the oracles for the given domain.
+    /// @notice Reverts if no threshold is not reached.
+    /// @notice Reverts if no oracles are set for the given domain.
+    function getThresholdHash(
+        uint256 domain,
+        uint256 id
+    ) public view returns (bytes32 hash) {
+        hash = _getThresholdHash(domain, id);
     }
 
     /// @dev Returns the hash unanimously agreed upon by all of the given oraclesAdapters..
@@ -62,7 +84,11 @@ contract ShoyuBashi is ShuSo {
     /// @notice Reverts if oracles disagree.
     /// @notice Reverts if oracles have not yet reported the hash for the given ID.
     /// @notice Reverts if no oracles are set for the given domain.
-    function getHash(uint256 domain, uint256 id, IOracleAdapter[] memory _adapters) public view returns (bytes32 hash) {
+    function getHash(
+        uint256 domain,
+        uint256 id,
+        IOracleAdapter[] memory _adapters
+    ) public view returns (bytes32 hash) {
         hash = _getHash(domain, id, _adapters);
     }
 }
