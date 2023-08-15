@@ -16,6 +16,12 @@ const config: HardhatUserConfig = {
       url: "https://rpc.gnosis.gateway.fm",
       chainId: 100,
       allowUnlimitedContractSize: true,
+    },
+    chiado:{
+      accounts:[process.env.DEPLOYER_OWNER_KEY],
+      url: "https://rpc.chiadochain.net",
+      chainId: 10200,
+      allowUnlimitedContractSize: true,
     }
   },
   solidity:{
