@@ -93,6 +93,65 @@ task("deploy:HashiModule")
      
     })
 
+    task("deploy:PullHashiModule")
+    .addParam("safe","Safe address")
+    .addParam("sourcechainid","source chain ID to listen from")
+    .addParam("controller","source chain address that will call yaho")
+    .addParam("owner","owner of this Hashi Module")
+    .addParam("target","address that this Module will execute on behalf of")
+    .addParam("privatekey","Private key of one of the owners of Safe wallet")
+    .setAction(async function(taskArguments:TaskArguments){
+        // const signers: SignerWithAddress[] = await ethers.getSigners()
+      
+        const provider = new ethers.providers.JsonRpcProvider(network.config.url)
+    
+        const signer = new ethers.Wallet(taskArguments.privatekey,provider )
+        console.log("Signer address: ",signer.address)
+        const HashiModule = await ethers.getContractFactory("TestHashiModule")
+        const _owner = taskArguments.owner
+        const _avatar = taskArguments.safe
+        const _target = taskArguments.target
+        const _yaru = contractAddress.Yaru
+        const _controller = taskArguments.controller
+        const _chainId = taskArguments.sourcechainid
+
+        console.log("Owner: ",_owner)
+        console.log("Safe: ",_avatar)
+        console.log("Target: ",_target)
+        console.log("Yaru: ",_yaru)
+        console.log("Controller: ",_controller)
+        console.log("ChainID: ",_chainId)
+
+        const hashiModule = await HashiModule.deploy(_owner,_avatar,_target,_yaru,_controller,_chainId)
+        console.log("setting up")
+        const ethAdapterOwner1 = new EthersAdapter({ethers,signerOrProvider: signer});
+        const safeSDK = await Safe.create({ethAdapter: ethAdapterOwner1,safeAddress:_avatar})
+        const safeTransaction = await safeSDK.createEnableModuleTx(hashiModule.address)
+        const txHash = await safeSDK.getTransactionHash(safeTransaction)
+        const senderSignature = await safeSDK.signTransactionHash(txHash)
+        const TxServiceUrl:string = getSafeTxService(network.config.chainId)
+        console.log("tx service url: ",TxServiceUrl)
+        const safeService = new SafeApiKit({txServiceUrl:TxServiceUrl,ethAdapter:ethAdapterOwner1})
+        console.log("Propose transaction...")
+        await safeService.proposeTransaction({
+            safeAddress:_avatar,
+            safeTransactionData: safeTransaction.data,
+            safeTxHash: txHash,
+            senderAddress: signer.address,
+            senderSignature: senderSignature.data,
+        })
+        
+        console.log("Please login to Safe UI and sign transaction")
+        // const approveTxResponse = await safeSDK.approveTransactionHash(txHash)
+        // console.log(await approveTxResponse.transactionResponse?.wait())
+        // const txResponse = await safeSDK.executeTransaction(safeTransaction)
+        
+        // console.log("Tx response: ",await txResponse.transactionResponse?.wait())
+        
+ 
+     
+    })
+
 const chainIds = {
     1 : "mainnet",
     5 : "goerli",
